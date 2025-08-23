@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:logger/logger.dart';
+
+part 'error_reporter.freezed.dart';
 
 /// {@template error_reporter}
 /// An interface for reporting errors.
@@ -53,23 +56,13 @@ final class ErrorReporterLogObserver with LogObserver {
 }
 
 /// An exception used for error logs without an exception, only a message.
-class ReportedMessageException implements Exception {
+@freezed
+class ReportedMessageException with _$ReportedMessageException implements Exception {
   /// Constructs an instance of [ReportedMessageException].
-  const ReportedMessageException(this.message);
+  const factory ReportedMessageException(String message) = _ReportedMessageException;
 
-  /// The message that was reported.
-  final String message;
+  const ReportedMessageException._();
 
   @override
   String toString() => message;
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-
-    return other is ReportedMessageException && other.message == message;
-  }
-
-  @override
-  int get hashCode => message.hashCode;
 }

@@ -8,16 +8,17 @@
 ## Code Quality Standards
 - Use 100-character line length for all Dart code
 - Follow sizzle_lints package rules strictly
-- Implement immutable data patterns with final classes
+- Use Freezed for immutable data patterns (see freezed_patterns.mdc for details)
 - Use BLoC for state management with sequential event processing
 - Apply dependency injection through composition root pattern
 
 ## Architecture Enforcement
 - New features MUST follow Clean Architecture layers (domain/data/application/presentation)
 - All features MUST be separate packages with proper dependency injection
-- Use sealed classes for events and states in BLoC implementations
+- Use Freezed sealed classes for events and states in BLoC implementations
 - Preserve data across state transitions to avoid unnecessary rebuilds
 - Handle errors gracefully with proper exception hierarchies
+- Generate code using `bash scripts/bootstrap.bash` after model changes
 
 ## Development Workflow
 - Check `.cursor/rules/` directory for specific patterns before coding
@@ -25,6 +26,7 @@
 - Follow feature_development.mdc for new feature creation
 - Apply style.mdc for naming conventions and code organization
 - Use bloc_patterns.mdc for state management implementation
+- Use freezed_patterns.mdc for data class and code generation patterns
 
 ## File Organization
 - Use snake_case for file and directory names

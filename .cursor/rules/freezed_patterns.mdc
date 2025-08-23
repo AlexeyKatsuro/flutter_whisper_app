@@ -1,0 +1,327 @@
+# Freezed Code Generation Patterns
+
+## Overview
+This project uses [Freezed](https://pub.dev/packages/freezed) for all data classes to eliminate boilerplate code and ensure consistency.
+
+## When to Use Freezed
+**ALWAYS use Freezed for:**
+- Data models (domain entities, DTOs, API responses)
+- BLoC states and events
+- Exception classes
+- Any class that needs `copyWith`, `==`, `hashCode`, `toString` methods
+
+**DO NOT use Freezed for:**
+- Simple value objects with custom behavior
+- Performance-critical classes where object creation overhead matters
+- Classes that need mutable state
+- Widget classes
+
+## Setup and Dependencies
+
+### Adding Freezed to a Package
+Add these dependencies to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0  # Only if JSON serialization needed
+
+dev_dependencies:
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0  # Only if JSON serialization needed
+  build_runner: ^2.5.3
+```
+
+### Code Generation
+After making changes to Freezed classes, always run:
+```bash
+bash scripts/bootstrap.bash
+```
+
+## Basic Patterns
+
+### Simple Data Class
+```dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'user.freezed.dart';
+
+@freezed
+class User with _$User {
+  const factory User({
+    required String id,
+    required String name,
+    String? email,
+    @Default(false) bool isActive,
+  }) = _User;
+}
+```
+
+### Data Class with JSON Serialization
+```dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'user.freezed.dart';
+part 'user.g.dart';
+
+@freezed
+class User with _$User {
+  const factory User({
+    required String id,
+    required String name,
+    String? email,
+    @Default(false) bool isActive,
+  }) = _User;
+
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+}
+```
+
+### Union Types (Sealed Classes)
+```dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'api_result.freezed.dart';
+
+@freezed
+sealed class ApiResult<T> with _$ApiResult<T> {
+  const factory ApiResult.success(T data) = ApiSuccess<T>;
+  const factory ApiResult.error(String message) = ApiError<T>;
+  const factory ApiResult.loading() = ApiLoading<T>;
+}
+```
+
+## BLoC Patterns
+
+### BLoC Events
+```dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'feature_bloc.freezed.dart';
+
+@freezed
+sealed class FeatureEvent with _$FeatureEvent {
+  const factory FeatureEvent.load() = _LoadEvent;
+  const factory FeatureEvent.refresh() = _RefreshEvent;
+  const factory FeatureEvent.update({required String data}) = _UpdateEvent;
+  const factory FeatureEvent.delete({required String id}) = _DeleteEvent;
+}
+```
+
+### BLoC States
+```dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'feature_bloc.freezed.dart';
+
+@freezed
+sealed class FeatureState with _$FeatureState {
+  const factory FeatureState.initial() = _InitialState;
+  const factory FeatureState.loading({String? data}) = _LoadingState;
+  const factory FeatureState.success({required String data}) = _SuccessState;
+  const factory FeatureState.error({
+    required String message,
+    String? data,
+  }) = _ErrorState;
+}
+```
+
+## Exception Patterns
+
+### Simple Exception
+```dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'app_exception.freezed.dart';
+
+@freezed
+class AppException with _$AppException implements Exception {
+  const factory AppException({
+    required String message,
+    String? code,
+    Object? cause,
+  }) = _AppException;
+}
+```
+
+### Exception Hierarchy
+```dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'network_exception.freezed.dart';
+
+@freezed
+sealed class NetworkException with _$NetworkException implements Exception {
+  const factory NetworkException.timeout({
+    required String message,
+    Duration? timeout,
+  }) = NetworkTimeoutException;
+  
+  const factory NetworkException.connectionFailed({
+    required String message,
+    Object? cause,
+  }) = NetworkConnectionException;
+  
+  const factory NetworkException.serverError({
+    required String message,
+    required int statusCode,
+  }) = NetworkServerException;
+}
+```
+
+## Advanced Patterns
+
+### Custom JSON Converters
+For complex types that don't have built-in JSON support:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'theme_config.freezed.dart';
+part 'theme_config.g.dart';
+
+@freezed
+class ThemeConfig with _$ThemeConfig {
+  const factory ThemeConfig({
+    @JsonKey(fromJson: _colorFromJson, toJson: _colorToJson)
+    required Color primaryColor,
+    @JsonKey(fromJson: _localeFromJson, toJson: _localeToJson)
+    Locale? locale,
+  }) = _ThemeConfig;
+
+  factory ThemeConfig.fromJson(Map<String, dynamic> json) => _$ThemeConfigFromJson(json);
+}
+
+Color _colorFromJson(int value) => Color(value);
+int _colorToJson(Color color) => color.value;
+
+Locale? _localeFromJson(String? languageCode) =>
+    languageCode != null ? Locale(languageCode) : null;
+String? _localeToJson(Locale? locale) => locale?.languageCode;
+```
+
+### Private Constructors for Custom Methods
+When you need custom methods alongside generated ones:
+
+```dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'user.freezed.dart';
+
+@freezed
+class User with _$User {
+  const factory User({
+    required String firstName,
+    required String lastName,
+    String? email,
+  }) = _User;
+
+  const User._();
+
+  String get fullName => '$firstName $lastName';
+
+  bool get hasEmail => email != null && email!.isNotEmpty;
+}
+```
+
+## File Organization
+
+### Import Order for Freezed Files
+```dart
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+import 'package:your_package/other_models.dart';
+
+part 'your_model.freezed.dart';
+part 'your_model.g.dart';  // Only if JSON serialization needed
+```
+
+### Generated Files
+- `*.freezed.dart` - Contains generated Freezed code
+- `*.g.dart` - Contains generated JSON serialization code (when using json_serializable)
+- Both files are automatically generated and should not be edited manually
+- Add both to `.gitignore` if you prefer to generate them in CI/CD, or commit them for faster builds
+
+## Best Practices
+
+### Naming Conventions
+- Use PascalCase for class names: `UserProfile`, `ApiResponse`
+- Use camelCase for field names: `firstName`, `isActive`
+- Use descriptive names for union type constructors: `success`, `error`, `loading`
+
+### Default Values
+```dart
+@freezed
+class Config with _$Config {
+  const factory Config({
+    @Default('') String name,
+    @Default(0) int value,
+    @Default([]) List<String> items,
+    @Default({}) Map<String, dynamic> metadata,
+  }) = _Config;
+}
+```
+
+### Documentation
+Always document your Freezed classes and their purposes:
+
+```dart
+/// {@template user_profile}
+/// Represents a user's profile information.
+/// 
+/// Contains basic user data and preferences. This class is immutable
+/// and provides [copyWith] method for creating modified copies.
+/// {@endtemplate}
+@freezed
+class UserProfile with _$UserProfile {
+  /// {@macro user_profile}
+  const factory UserProfile({
+    /// Unique identifier for the user
+    required String id,
+    /// User's display name
+    required String name,
+    /// Optional email address
+    String? email,
+  }) = _UserProfile;
+}
+```
+
+## Performance Considerations
+
+### Efficient Equality Checks
+Freezed generates efficient `==` and `hashCode` implementations that use all fields by default. If you have expensive computed fields, consider excluding them:
+
+```dart
+@freezed
+class ExpensiveClass with _$ExpensiveClass {
+  const factory ExpensiveClass({
+    required String id,
+    required String data,
+    // This field won't be used in == and hashCode
+    @JsonKey(includeFromJson: false, includeToJson: false)
+    @Default(null) String? computedField,
+  }) = _ExpensiveClass;
+}
+```
+
+### Memory Usage
+- Freezed classes are immutable, which can help with memory management
+- Use `copyWith` sparingly in hot paths as it creates new instances
+- Consider using shared instances for common values
+
+## Troubleshooting
+
+### Common Build Issues
+1. **Missing part directive**: Ensure you have `part 'filename.freezed.dart';`
+2. **JSON serialization errors**: Add custom converters for unsupported types
+3. **Generic type issues**: Be explicit with generic constraints when needed
+4. **Import conflicts**: Use `show` or `hide` to resolve naming conflicts
+
+### Code Generation
+- Always run `bash scripts/bootstrap.bash` after changing Freezed classes
+- If generation fails, check for syntax errors in your Dart code first
+- Clean and regenerate if you encounter persistent issues: `dart run build_runner clean`

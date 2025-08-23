@@ -1,5 +1,8 @@
 import 'package:analytics/analytics.dart';
 import 'package:collection/collection.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'analytics_reporter.freezed.dart';
 
 /// {@template analytics_reporter}
 /// Interface for reporting analytics events.
@@ -30,35 +33,13 @@ abstract interface class AnalyticsReporter {
 /// It is recommended to create custom events by extending this class, although
 /// events can also be added directly using this class.
 /// {@endtemplate}
-base class AnalyticsEvent {
+@freezed
+class AnalyticsEvent with _$AnalyticsEvent {
   /// {@macro analytics_event}
-  const AnalyticsEvent(this.name, {this.parameters = const {}});
-
-  /// The name of the event.
-  ///
-  /// It should be a unique identifier for the event that is understood by the
-  /// analytics service being used.
-  final String name;
-
-  /// The parameters of the event.
-  ///
-  /// Parameters are optional and can be used to provide additional context or
-  /// data with the event.
-  final Set<AnalyticsParameter<Object>> parameters;
-
-  @override
-  String toString() => 'AnalyticsEvent(name: $name, parameters: ${parameters.join(', ')})';
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is AnalyticsEvent &&
-        other.name == name &&
-        const DeepCollectionEquality().equals(other.parameters, parameters);
-  }
-
-  @override
-  int get hashCode => Object.hash(name, const DeepCollectionEquality().hash(parameters));
+  const factory AnalyticsEvent({
+    required String name,
+    @Default({}) Set<AnalyticsParameter> parameters,
+  }) = _AnalyticsEvent;
 }
 
 /// {@template analytics_parameter}
@@ -71,53 +52,17 @@ base class AnalyticsEvent {
 /// Other types are not supported by Firebase Analytics. If you are using a
 /// different tool for analytics, you can create a custom parameter type.
 /// {@endtemplate}
-sealed class AnalyticsParameter<T> {
-  /// {@macro analytics_parameter}
-  const AnalyticsParameter(this.name, this.value);
+@freezed
+sealed class AnalyticsParameter with _$AnalyticsParameter {
+  /// String analytics parameter.
+  const factory AnalyticsParameter.string({
+    required String name,
+    required String value,
+  }) = StringAnalyticsParameter;
 
-  /// The name of the parameter.
-  final String name;
-
-  /// The value of the parameter.
-  final T value;
-}
-
-/// {@template string_analytics_parameter}
-/// Analytics parameter that contains a [String] value.
-/// {@endtemplate}
-final class StringAnalyticsParameter extends AnalyticsParameter<String> {
-  /// {@macro string_analytics_parameter}
-  const StringAnalyticsParameter(super.name, super.value);
-
-  @override
-  String toString() => 'StringAnalyticsParameter(name: $name, value: $value)';
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is StringAnalyticsParameter && other.name == name && other.value == value;
-  }
-
-  @override
-  int get hashCode => name.hashCode ^ value.hashCode;
-}
-
-/// {@template number_analytics_parameter}
-/// Analytics parameter that contains a [num] value.
-/// {@endtemplate}
-final class NumberAnalyticsParameter extends AnalyticsParameter<num> {
-  /// {@macro number_analytics_parameter}
-  const NumberAnalyticsParameter(super.name, super.value);
-
-  @override
-  String toString() => 'NumberAnalyticsParameter(name: $name, value: $value)';
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is NumberAnalyticsParameter && other.name == name && other.value == value;
-  }
-
-  @override
-  int get hashCode => name.hashCode ^ value.hashCode;
+  /// Number analytics parameter.
+  const factory AnalyticsParameter.number({
+    required String name,
+    required num value,
+  }) = NumberAnalyticsParameter;
 }

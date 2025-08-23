@@ -72,125 +72,34 @@ final class FeatureBloc extends Bloc<FeatureEvent, FeatureState> {
 ```
 
 ### Event Patterns
-Use sealed classes for type-safe event handling:
+Use Freezed sealed classes for type-safe event handling. For detailed Freezed patterns, see `freezed_patterns.mdc`.
 
 ```dart
-sealed class FeatureEvent {
-  const FeatureEvent();
-  
-  /// Creates a new feature item
+@freezed
+sealed class FeatureEvent with _$FeatureEvent {
   const factory FeatureEvent.create({required FeatureData data}) = _CreateEvent;
-  
-  /// Updates an existing feature item
   const factory FeatureEvent.update({required FeatureData data}) = _UpdateEvent;
-  
-  /// Deletes a feature item
   const factory FeatureEvent.delete({required String id}) = _DeleteEvent;
-}
-
-final class _CreateEvent extends FeatureEvent {
-  const _CreateEvent({required this.data});
-  
-  final FeatureData data;
-  
-  @override
-  String toString() => 'FeatureEvent.create(data: $data)';
-}
-
-final class _UpdateEvent extends FeatureEvent {
-  const _UpdateEvent({required this.data});
-  
-  final FeatureData data;
-  
-  @override
-  String toString() => 'FeatureEvent.update(data: $data)';
-}
-
-final class _DeleteEvent extends FeatureEvent {
-  const _DeleteEvent({required this.id});
-  
-  final String id;
-  
-  @override
-  String toString() => 'FeatureEvent.delete(id: $id)';
 }
 ```
 
 ### State Patterns
-Implement states with data preservation and clear status indication:
+Use Freezed sealed classes for states with data preservation and clear status indication. For detailed Freezed patterns, see `freezed_patterns.mdc`.
 
 ```dart
-sealed class FeatureState {
-  const FeatureState({this.data});
-  
-  /// The current data (preserved across state changes)
-  final FeatureData? data;
-  
-  /// Initial/idle state
+@freezed
+sealed class FeatureState with _$FeatureState {
   const factory FeatureState.idle({FeatureData? data}) = _IdleState;
-  
-  /// Loading state (operation in progress)
   const factory FeatureState.loading({FeatureData? data}) = _LoadingState;
-  
-  /// Success state (operation completed)
   const factory FeatureState.success({required FeatureData data}) = _SuccessState;
-  
-  /// Error state (operation failed)
   const factory FeatureState.error({
     required Object error,
     FeatureData? data,
   }) = _ErrorState;
 }
-
-final class _IdleState extends FeatureState {
-  const _IdleState({super.data});
-  
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is _IdleState && other.data == data;
-  
-  @override
-  int get hashCode => data.hashCode;
-  
-  @override
-  String toString() => 'FeatureState.idle(data: $data)';
-}
-
-final class _LoadingState extends FeatureState {
-  const _LoadingState({super.data});
-  
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is _LoadingState && other.data == data;
-  
-  @override
-  int get hashCode => data.hashCode;
-  
-  @override
-  String toString() => 'FeatureState.loading(data: $data)';
-}
-
-final class _ErrorState extends FeatureState {
-  const _ErrorState({required this.error, super.data});
-  
-  final Object error;
-  
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is _ErrorState && 
-          other.error == error && 
-          other.data == data;
-  
-  @override
-  int get hashCode => Object.hash(error, data);
-  
-  @override
-  String toString() => 'FeatureState.error(error: $error, data: $data)';
-}
 ```
+
+**Key benefits:** Automatic generation of `==`, `hashCode`, `toString`, `copyWith` methods, immutable data structures, and pattern matching support.
 
 ## State Access Patterns
 

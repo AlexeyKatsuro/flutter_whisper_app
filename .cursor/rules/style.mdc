@@ -55,54 +55,37 @@ find lib test -name '*.dart' ! -name '*.*.dart' -exec dart format --line-length 
 7. **Overridden methods** (`toString`, `==`, `hashCode`)
 
 ### Immutability Patterns
-**Prefer immutable classes with final fields:**
+**Use Freezed for immutable data classes to eliminate boilerplate.** See `freezed_patterns.mdc` for comprehensive guidelines.
+
 ```dart
-final class UserProfile {
-  const UserProfile({
-    required this.id,
-    required this.name,
-    required this.email,
-    this.avatar,
-  });
-  
-  final String id;
-  final String name;
-  final String email;
-  final String? avatar;
-  
-  UserProfile copyWith({
-    String? name,
-    String? email,
+@freezed
+class UserProfile with _$UserProfile {
+  const factory UserProfile({
+    required String id,
+    required String name,
+    required String email,
     String? avatar,
-  }) => UserProfile(
-    id: id,
-    name: name ?? this.name,
-    email: email ?? this.email,
-    avatar: avatar ?? this.avatar,
-  );
-  
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is UserProfile &&
-          other.id == id &&
-          other.name == name &&
-          other.email == email &&
-          other.avatar == avatar;
-  
-  @override
-  int get hashCode => Object.hash(id, name, email, avatar);
-  
-  @override
-  String toString() => 'UserProfile(id: $id, name: $name, email: $email)';
+  }) = _UserProfile;
+
+  factory UserProfile.fromJson(Map<String, dynamic> json) => _$UserProfileFromJson(json);
 }
 ```
 
+**When to use Freezed vs manual implementation:**
+- **Use Freezed**: Data models, BLoC states/events, API response models, exception classes
+- **Use manual**: Simple value objects, custom behavior classes, performance-critical classes
+
 ### Constructor Patterns
-- **Use const constructors** when possible
-- **Named parameters** for constructors with multiple parameters
-- **Required parameters** for essential fields
-- **Default values** for optional parameters when appropriate
+**For Freezed classes** (see `freezed_patterns.mdc` for details):
+- Use factory constructors with named parameters
+- Mark essential fields as `required`
+- Use `@Default()` annotation for default values
+
+**For manual classes:**
+- Use const constructors when possible
+- Named parameters for multiple parameters
+- Required parameters for essential fields
+- Default values for optional parameters
 
 ```dart
 const UserSettings({
@@ -121,22 +104,24 @@ const UserSettings({
 ## Error Handling Patterns
 
 ### Exception Classes
+**Use Freezed for exception hierarchies** (see `freezed_patterns.mdc` for detailed patterns):
+
 ```dart
-/// Base exception for all settings-related errors
+@freezed
+sealed class SettingsException with _$SettingsException implements Exception {
+  const factory SettingsException.save({required String message, Object? cause}) = SettingsSaveException;
+  const factory SettingsException.load({required String message, Object? cause}) = SettingsLoadException;
+  const factory SettingsException.validation({required String message, required String field}) = SettingsValidationException;
+}
+```
+
+**For manual exception classes:**
+```dart
 sealed class SettingsException implements Exception {
   const SettingsException({required this.message});
-  
   final String message;
-  
   @override
   String toString() => 'SettingsException: $message';
-}
-
-/// Thrown when settings cannot be saved
-final class SettingsSaveException extends SettingsException {
-  const SettingsSaveException({required super.message, this.cause});
-  
-  final Object? cause;
 }
 ```
 
@@ -200,9 +185,11 @@ UserProfile updateName(String name) {
 ### Import Order
 1. **Dart SDK imports** (e.g., `dart:async`, `dart:io`)
 2. **Flutter framework imports** (e.g., `package:flutter/material.dart`)
-3. **External package imports** (alphabetical)
-4. **Internal package imports** (alphabetical)
-5. **Relative imports** (use sparingly)
+3. **Code generation imports** (e.g., `package:freezed_annotation/freezed_annotation.dart`)
+4. **External package imports** (alphabetical)
+5. **Internal package imports** (alphabetical)
+6. **Part directives** (for generated files)
+7. **Relative imports** (use sparingly)
 
 ### Import Style
 ```dart
@@ -210,9 +197,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'package:common/common.dart';
 import 'package:settings_api/settings_api.dart';
+
+part 'user_profile.freezed.dart';
+part 'user_profile.g.dart';
 
 import '../models/user_profile.dart';
 ```
@@ -287,20 +278,39 @@ void main() {
 }
 ```
 
+## Code Generation
+
+### Freezed Usage
+Use Freezed for data models, BLoC states/events, and exception classes. See `freezed_patterns.mdc` for comprehensive guidelines including:
+- Setup and dependencies
+- Basic and advanced patterns  
+- JSON serialization with custom converters
+- BLoC-specific patterns
+- Exception hierarchies
+
+### Code Generation Workflow
+After modifying Freezed classes, always run:
+```bash
+bash scripts/bootstrap.bash
+```
+
 ## Performance and Best Practices
 
 ### Const Usage
 - Use `const` constructors and widgets whenever possible
 - Mark collections as `const` when they don't change
 - Use `const` for default values in constructors
+- With Freezed, const constructors are generated automatically
 
 ### Memory Management
 - Dispose of streams, controllers, and listeners in `dispose()`
 - Use weak references for callbacks when appropriate
 - Avoid memory leaks in long-running operations
+- Freezed classes are immutable by default, reducing memory allocation issues
 
 ### Null Safety
 - Use nullable types (`Type?`) only when null is a valid state
 - Prefer non-nullable types with default values
 - Use null-aware operators (`??`, `?.`, `??=`) appropriately
 - Avoid `!` operator except when you're certain value is non-null
+- Use `@Default()` annotation in Freezed for non-null default values
