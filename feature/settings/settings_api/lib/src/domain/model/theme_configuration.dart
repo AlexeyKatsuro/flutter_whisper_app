@@ -20,4 +20,4 @@ class ThemeConfiguration with _$ThemeConfiguration {
 
 Color _colorFromJson(int value) => Color(value);
 
-int _colorToJson(Color color) => color.value;
+int _colorToJson(Color color) => color.toARGB32();

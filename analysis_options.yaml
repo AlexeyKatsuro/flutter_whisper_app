@@ -5,7 +5,10 @@ formatter:
   trailing_commas: preserve
 
 analyzer:
-  exclude: 
+  errors:
+    invalid_annotation_target: ignore
+    todo: ignore
+  exclude:
     - "lib/src/core/localization/generated/**"
     - "**/*.*.dart"
     - "**/generated/**"

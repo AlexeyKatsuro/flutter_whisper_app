@@ -19,7 +19,7 @@ void main() {
 
   group('FirebaseAnalyticsReporter', () {
     test('logEvent logs event to Firebase Analytics', () async {
-      const event = AnalyticsEvent('test_event');
+      const event = AnalyticsEvent(name: 'test_event');
       await reporter.logEvent(event);
 
       verify(mockAnalytics.logEvent(name: 'test_event')).called(1);
@@ -27,11 +27,11 @@ void main() {
 
     test('logEvent logs event with parameters', () async {
       final event = AnalyticsEvent(
-        'test_event',
+        name: 'test_event',
         parameters: {
-          const StringAnalyticsParameter('test_parameter', 'test_value'),
-          const StringAnalyticsParameter('test_parameter2', 'test_value2'),
-          const NumberAnalyticsParameter('number_event', 42),
+          const AnalyticsParameter.string(name: 'test_parameter', value: 'test_value'),
+          const AnalyticsParameter.string(name: 'test_parameter2', value: 'test_value2'),
+          const AnalyticsParameter.number(name: 'number_event', value: 42),
         },
       );
 
