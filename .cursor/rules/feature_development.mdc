@@ -1,0 +1,306 @@
+# Feature Development Rules
+
+## Feature Module Creation
+
+### Feature Structure
+Every feature must be created as a separate package with the following structure:
+```
+feature/{feature_name}/
+└── {feature_name}_api/
+    ├── pubspec.yaml
+    ├── lib/
+    │   ├── {feature_name}_api.dart     # Public API exports
+    │   └── src/
+    │       ├── application/
+    │       │   └── bloc/               # BLoCs and Cubits
+    │       ├── data/
+    │       │   ├── datasources/        # Local and remote data sources
+    │       │   ├── mappers/            # Data transformation codecs
+    │       │   └── repositories/       # Repository implementations
+    │       ├── domain/
+    │       │   ├── model/              # Domain models
+    │       │   └── repositories/       # Repository abstractions
+    │       ├── presentation/
+    │       │   └── widget/             # UI components and screens
+    │       └── injection.dart          # Feature dependency injection
+    └── test/                           # Feature tests
+```
+
+### Naming Conventions
+- Feature package name: `{feature_name}_api` (e.g., `settings_api`, `auth_api`)
+- Main export file: `{feature_name}_api.dart`
+- Directory names: lowercase with underscores
+- Model classes: PascalCase (e.g., `UserProfile`, `ThemeConfiguration`)
+- Repositories: `{Entity}Repository` for interface, `{Entity}RepositoryImpl` for implementation
+
+## Clean Architecture Layers
+
+### Domain Layer (`src/domain/`)
+**Purpose**: Business logic and entities, framework-independent
+
+**Rules**:
+- Contains only pure Dart code (no Flutter dependencies)
+- Define abstract repository interfaces
+- Create immutable domain models with value objects
+- Models should implement `==`, `hashCode`, and `toString()`
+- Use `copyWith` methods for immutable updates
+- Prefer composition over inheritance
+
+**Model Example**:
+```dart
+final class Settings {
+  const Settings({this.themeConfiguration, this.locale, this.textScale});
+  
+  final ThemeConfiguration? themeConfiguration;
+  final Locale? locale;
+  final double? textScale;
+  
+  static const initial = Settings(/* default values */);
+  
+  Settings copyWith({
+    ThemeConfiguration? themeConfiguration,
+    Locale? locale,
+    double? textScale,
+  }) => Settings(/* implementation */);
+  
+  @override
+  bool operator ==(Object other) => /* implementation */;
+  
+  @override
+  int get hashCode => Object.hash(/* fields */);
+}
+```
+
+### Data Layer (`src/data/`)
+**Purpose**: Data access and external service integration
+
+**Components**:
+1. **Datasources**: Handle specific data sources (API, local storage, etc.)
+2. **Repositories**: Implement domain repository contracts
+3. **Mappers/Codecs**: Transform between data and domain models
+
+**Repository Implementation Pattern**:
+```dart
+final class SettingsRepositoryImpl implements SettingsRepository {
+  const SettingsRepositoryImpl({required this.settingsLocalDatasource});
+  
+  final SettingsLocalDatasource settingsLocalDatasource;
+  
+  @override
+  Future<Settings?> read() async {
+    final data = await settingsLocalDatasource.read();
+    return data != null ? SettingsCodec.decode(data) : null;
+  }
+  
+  @override
+  Future<void> save(Settings settings) async {
+    final encoded = SettingsCodec.encode(settings);
+    await settingsLocalDatasource.save(encoded);
+  }
+}
+```
+
+**Datasource Pattern**:
+```dart
+abstract interface class SettingsLocalDatasource {
+  Future<Map<String, Object?>?> read();
+  Future<void> save(Map<String, Object?> data);
+}
+
+final class SettingsLocalDatasourceSharedPreferences 
+    implements SettingsLocalDatasource {
+  const SettingsLocalDatasourceSharedPreferences({
+    required this.sharedPreferences,
+  });
+  
+  final SharedPreferencesAsync sharedPreferences;
+  
+  // Implementation...
+}
+```
+
+### Application Layer (`src/application/`)
+**Purpose**: Orchestrates business logic using BLoC pattern
+
+**Rules**:
+- One BLoC per feature or major use case
+- Use sealed classes for events and states
+- Handle async operations and state transitions
+- Inject repositories through constructor
+- Emit loading/success/error states
+
+**BLoC Pattern**:
+```dart
+final class FeatureBloc extends Bloc<FeatureEvent, FeatureState> {
+  FeatureBloc({
+    required FeatureRepository repository,
+    required FeatureState initialState,
+  }) : _repository = repository,
+       super(initialState) {
+    on<FeatureEvent>((event, emit) => switch (event) {
+      final _UpdateEvent e => _handleUpdate(e, emit),
+    });
+  }
+  
+  final FeatureRepository _repository;
+  
+  Future<void> _handleUpdate(_UpdateEvent event, Emitter<FeatureState> emit) async {
+    try {
+      emit(FeatureState.loading(data: state.data));
+      final result = await _repository.update(event.data);
+      emit(FeatureState.success(data: result));
+    } catch (error) {
+      emit(FeatureState.error(error: error, data: state.data));
+    }
+  }
+}
+```
+
+### Presentation Layer (`src/presentation/`)
+**Purpose**: UI components and user interaction
+
+**Components**:
+1. **Screens**: Full-page widgets
+2. **Components**: Reusable UI pieces
+3. **Scopes**: Feature-specific inherited widgets for state access
+
+**Screen Pattern**:
+```dart
+class FeatureScreen extends StatefulWidget {
+  const FeatureScreen({super.key});
+  
+  @override
+  State<FeatureScreen> createState() => _FeatureScreenState();
+}
+
+class _FeatureScreenState extends State<FeatureScreen> {
+  void _handleUserAction() {
+    final bloc = FeatureScope.blocOf(context);
+    bloc.add(const FeatureEvent.action());
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(/* UI implementation */);
+  }
+}
+```
+
+## Dependency Injection per Feature
+
+### Feature Container Pattern
+Each feature must provide a container that encapsulates all its dependencies:
+
+```dart
+class FeatureContainer {
+  const FeatureContainer({
+    required this.repository,
+    required this.bloc,
+  });
+  
+  final FeatureRepository repository;
+  final FeatureBloc bloc;
+  
+  static Future<FeatureContainer> create(SharedPreferencesAsync prefs) async {
+    final repository = _createRepository(prefs);
+    final bloc = await _createBloc(repository);
+    
+    return FeatureContainer(
+      repository: repository,
+      bloc: bloc,
+    );
+  }
+}
+
+// Private factory functions
+FeatureRepository _createRepository(SharedPreferencesAsync prefs) {
+  return FeatureRepositoryImpl(
+    datasource: FeatureLocalDatasourceImpl(sharedPreferences: prefs),
+  );
+}
+
+Future<FeatureBloc> _createBloc(FeatureRepository repository) async {
+  final initialData = await repository.getInitialData();
+  return FeatureBloc(
+    repository: repository,
+    initialState: FeatureState.loaded(data: initialData),
+  );
+}
+```
+
+### Feature Scope Widget
+Provide access to feature dependencies through inherited widget:
+
+```dart
+class FeatureScope extends StatefulWidget {
+  const FeatureScope({
+    required this.container,
+    required this.child,
+    super.key,
+  });
+  
+  final FeatureContainer container;
+  final Widget child;
+  
+  static FeatureBloc blocOf(BuildContext context, {bool listen = true}) {
+    final scope = listen 
+        ? context.dependOnInheritedWidgetOfExactType<_FeatureInherited>()
+        : context.getInheritedWidgetOfExactType<_FeatureInherited>();
+        
+    if (scope == null) {
+      throw Exception('FeatureScope not found');
+    }
+    
+    return scope.container.bloc;
+  }
+  
+  static FeatureState stateOf(BuildContext context, {bool listen = true}) {
+    final scope = of(context, listen: listen);
+    return scope.state;
+  }
+  
+  @override
+  State<FeatureScope> createState() => _FeatureScopeState();
+}
+```
+
+## Public API Export
+
+### Feature API File
+Each feature must export its public interface through `{feature_name}_api.dart`:
+
+```dart
+// Public interfaces and models
+export 'src/domain/model/feature_model.dart';
+export 'src/domain/repositories/feature_repository.dart';
+
+// Application layer
+export 'src/application/bloc/feature_bloc.dart';
+
+// Presentation layer
+export 'src/presentation/widget/feature_scope.dart';
+
+// Dependency injection
+export 'src/injection.dart';
+```
+
+### Integration Rules
+1. **Only export what other features/app needs to use**
+2. **Keep implementation details in src/ private**
+3. **Use clear, descriptive export names**
+4. **Document any breaking changes in feature API**
+
+## Feature Integration
+
+### Adding Feature to App
+1. Add feature dependency to app's `pubspec.yaml`
+2. Initialize feature container in composition root
+3. Add feature container to main dependencies container
+4. Provide feature scope in widget tree if needed
+5. Import and use feature through its public API
+
+### Cross-Feature Communication
+- Features should communicate through shared domain events
+- Use application-level state management for cross-cutting concerns
+- Avoid direct feature-to-feature dependencies
+- Prefer dependency inversion with shared abstractions

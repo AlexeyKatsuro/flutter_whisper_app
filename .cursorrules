@@ -1,0 +1,33 @@
+# Sizzle Starter Flutter Project Rules
+
+## General Instructions
+- NEVER create or modify any files before examining relevant rules in `.cursor/rules/`
+- Follow the Sizzle Starter template architecture patterns religiously
+- Use the modular workspace structure with app/, core/, and feature/ directories
+
+## Code Quality Standards
+- Use 100-character line length for all Dart code
+- Follow sizzle_lints package rules strictly
+- Implement immutable data patterns with final classes
+- Use BLoC for state management with sequential event processing
+- Apply dependency injection through composition root pattern
+
+## Architecture Enforcement
+- New features MUST follow Clean Architecture layers (domain/data/application/presentation)
+- All features MUST be separate packages with proper dependency injection
+- Use sealed classes for events and states in BLoC implementations
+- Preserve data across state transitions to avoid unnecessary rebuilds
+- Handle errors gracefully with proper exception hierarchies
+
+## Development Workflow
+- Check `.cursor/rules/` directory for specific patterns before coding
+- Refer to architecture.mdc for dependency management patterns
+- Follow feature_development.mdc for new feature creation
+- Apply style.mdc for naming conventions and code organization
+- Use bloc_patterns.mdc for state management implementation
+
+## File Organization
+- Use snake_case for file and directory names
+- Place implementation details in src/ directories
+- Export public APIs through single library files
+- Follow the established project structure religiously

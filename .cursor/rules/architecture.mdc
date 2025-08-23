@@ -1,0 +1,144 @@
+# Architecture Rules for Sizzle Starter Template
+
+## Project Structure
+
+### Workspace Organization
+- Use Dart workspace with separate packages for modularity
+- Organize code into three main directories:
+  - `app/` - Main application entry point and bootstrapping
+  - `core/` - Shared utilities, services, and infrastructure 
+  - `feature/` - Business feature modules
+
+### Core Modules Structure
+Core modules should follow this structure:
+```
+core/
+├── common/           # Shared utilities and extensions
+├── logger/           # Logging infrastructure
+├── error_reporter/   # Error reporting and monitoring
+├── rest_client/      # HTTP client abstraction
+├── database/         # Database configuration and migrations
+├── analytics/        # Analytics tracking
+└── ui_library/       # Shared UI components and design tokens
+```
+
+Each core module must:
+- Have its own `pubspec.yaml` with clear dependencies
+- Export public API through a single `lib/{module_name}.dart` file
+- Use `src/` directory for internal implementation
+- Follow single responsibility principle
+
+### Feature Modules Structure
+Features should be organized as separate packages:
+```
+feature/
+└── {feature_name}/
+    └── {feature_name}_api/
+        ├── lib/
+        │   ├── {feature_name}_api.dart  # Public API exports
+        │   └── src/
+        │       ├── application/         # BLoC/Cubit layer
+        │       ├── data/               # Data sources and repositories
+        │       ├── domain/             # Models and abstract repositories
+        │       ├── injection.dart      # Dependency injection setup
+        │       └── presentation/       # UI widgets and screens
+        └── pubspec.yaml
+```
+
+## Dependency Management
+
+### Composition Root Pattern
+- Use composition root in `app/lib/src/logic/composition_root.dart`
+- All application-wide dependencies are initialized in `composeDependencies()`
+- Dependencies flow from composition root through `DependenciesContainer`
+- Use factory functions for creating complex dependencies
+
+### Dependency Injection Rules
+1. **Container Pattern**: Use `DependenciesContainer` for global dependencies
+2. **Feature Containers**: Each feature should have its own container (e.g., `SettingsContainer`)
+3. **Scope Pattern**: Use inherited widgets for dependency scoping:
+   - `DependenciesScope` for global dependencies
+   - Feature-specific scopes (e.g., `SettingsScope`) for feature dependencies
+4. **Testing**: Provide test implementations using base classes (e.g., `TestDependenciesContainer`)
+
+### Container Creation Pattern
+```dart
+class FeatureContainer {
+  const FeatureContainer({required this.repository, required this.bloc});
+  
+  final FeatureRepository repository;
+  final FeatureBloc bloc;
+  
+  static Future<FeatureContainer> create(Dependencies deps) async {
+    final repository = _createRepository(deps);
+    final bloc = await _createBloc(repository);
+    return FeatureContainer(repository: repository, bloc: bloc);
+  }
+}
+```
+
+## Application Lifecycle
+
+### Startup Sequence
+1. **Configuration**: Load `ApplicationConfig` with environment variables
+2. **Error Handling**: Initialize error reporter and logger
+3. **Global Setup**: Configure Flutter error handlers and BLoC observer
+4. **Composition**: Create dependency graph via composition root
+5. **Launch**: Run app with `RootContext` wrapping the dependency tree
+
+### Widget Tree Structure
+```
+RootContext
+├── DependenciesScope (global dependencies)
+├── WindowSizeScope (responsive design)
+└── MaterialContext
+    ├── SettingsScope (feature dependencies)
+    └── Feature Screens
+```
+
+## Error Handling Strategy
+
+### Global Error Interception
+- Use `runZonedGuarded` for uncaught exceptions
+- Configure `FlutterError.onError` and `PlatformDispatcher.onError`
+- Log all errors through the `Logger` system
+- Provide graceful degradation with `InitializationFailedApp`
+
+### Error Types and Handling
+1. **Initialization Errors**: Show retry UI with `InitializationFailedApp`
+2. **Network Errors**: Use `RestClientException` hierarchy
+3. **State Errors**: Handle in BLoC error states
+4. **Validation Errors**: Handle at form/input level
+
+## Configuration Management
+
+### Environment Configuration
+- Use `ApplicationConfig` class for all environment-specific settings
+- Load configuration from compile-time environment variables
+- Support different environments (development, staging, production)
+- Provide test configuration implementations
+
+### Feature Flags and Settings
+- Use the settings feature for user preferences
+- Store settings in `SharedPreferences` through abstraction layer
+- Implement settings as domain models with codecs for serialization
+
+## Testing Architecture
+
+### Test Structure
+- Mirror production structure in test files
+- Use test implementations of containers and configs
+- Provide base test classes that throw on unimplemented dependencies
+- Mock external dependencies at the container level
+
+### Test Dependency Pattern
+```dart
+base class TestFeatureContainer implements FeatureContainer {
+  const TestFeatureContainer();
+  
+  @override
+  Object noSuchMethod(Invocation invocation) {
+    throw UnimplementedError('Provide ${invocation.memberName} in test');
+  }
+}
+```

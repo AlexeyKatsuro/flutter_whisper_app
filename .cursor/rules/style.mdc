@@ -1,0 +1,306 @@
+# Code Style and Naming Rules
+
+## Code Formatting
+
+### Dart Formatter Configuration
+- **Line length**: 100 characters (configured in `analysis_options.yaml`)
+- **Trailing commas**: Preserve existing trailing commas
+- **Linting**: Use `sizzle_lints` package for comprehensive linting rules
+
+### Formatting Commands
+```bash
+# Format with line length 100
+dart format --line-length 100 lib/ test/
+
+# Exclude generated files
+find lib test -name '*.dart' ! -name '*.*.dart' -exec dart format --line-length 100 {} +
+```
+
+## Naming Conventions
+
+### Files and Directories
+- **Files**: `snake_case.dart` (e.g., `user_profile.dart`, `settings_bloc.dart`)
+- **Directories**: `snake_case` (e.g., `user_management/`, `data_sources/`)
+- **Generated files**: `*.g.dart`, `*.freezed.dart` patterns (excluded from formatting)
+
+### Classes and Types
+- **Classes**: `PascalCase` (e.g., `UserProfile`, `SettingsBloc`, `ThemeConfiguration`)
+- **Abstract classes**: Prefix with descriptive intent (e.g., `SettingsRepository`, `BaseLogger`)
+- **Implementation classes**: Suffix with `Impl` (e.g., `SettingsRepositoryImpl`)
+- **Test classes**: Suffix with `Test` (e.g., `SettingsBlocTest`)
+- **Mixins**: `PascalCase` with descriptive name (e.g., `ValidationMixin`)
+- **Extensions**: `PascalCase` with `Extension` suffix (e.g., `StringExtension`)
+- **Enums**: `PascalCase` for enum type, `camelCase` for values (e.g., `ThemeMode.light`)
+
+### Variables and Functions
+- **Variables**: `camelCase` (e.g., `userProfile`, `currentTheme`)
+- **Constants**: `camelCase` for local, `lowerCamelCase` for class constants (e.g., `const apiTimeout = 30`)
+- **Static constants**: `camelCase` (e.g., `static const defaultTimeout = 30`)
+- **Functions**: `camelCase` (e.g., `getUserProfile()`, `updateSettings()`)
+- **Private members**: Prefix with `_` (e.g., `_internalState`, `_calculateValue()`)
+
+### Packages and Libraries
+- **Package names**: `snake_case` (e.g., `settings_api`, `user_management`)
+- **Library exports**: Use descriptive names in export file (e.g., `settings_api.dart`)
+
+## Class Structure and Patterns
+
+### Class Definition Order
+1. **Class documentation** (if applicable)
+2. **Constructors** (const constructor first, then named constructors)
+3. **Static members** (constants, static methods)
+4. **Instance fields** (final fields first, then mutable)
+5. **Getters and setters**
+6. **Instance methods** (public first, then private)
+7. **Overridden methods** (`toString`, `==`, `hashCode`)
+
+### Immutability Patterns
+**Prefer immutable classes with final fields:**
+```dart
+final class UserProfile {
+  const UserProfile({
+    required this.id,
+    required this.name,
+    required this.email,
+    this.avatar,
+  });
+  
+  final String id;
+  final String name;
+  final String email;
+  final String? avatar;
+  
+  UserProfile copyWith({
+    String? name,
+    String? email,
+    String? avatar,
+  }) => UserProfile(
+    id: id,
+    name: name ?? this.name,
+    email: email ?? this.email,
+    avatar: avatar ?? this.avatar,
+  );
+  
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UserProfile &&
+          other.id == id &&
+          other.name == name &&
+          other.email == email &&
+          other.avatar == avatar;
+  
+  @override
+  int get hashCode => Object.hash(id, name, email, avatar);
+  
+  @override
+  String toString() => 'UserProfile(id: $id, name: $name, email: $email)';
+}
+```
+
+### Constructor Patterns
+- **Use const constructors** when possible
+- **Named parameters** for constructors with multiple parameters
+- **Required parameters** for essential fields
+- **Default values** for optional parameters when appropriate
+
+```dart
+const UserSettings({
+  required this.theme,
+  required this.locale,
+  this.notifications = true,
+  this.analyticsEnabled = false,
+});
+```
+
+### Access Modifiers
+- **Public API**: No prefix, document with dartdoc comments
+- **Internal/Private**: Use `_` prefix for implementation details
+- **Package-private**: Place in `src/` directory, don't export publicly
+
+## Error Handling Patterns
+
+### Exception Classes
+```dart
+/// Base exception for all settings-related errors
+sealed class SettingsException implements Exception {
+  const SettingsException({required this.message});
+  
+  final String message;
+  
+  @override
+  String toString() => 'SettingsException: $message';
+}
+
+/// Thrown when settings cannot be saved
+final class SettingsSaveException extends SettingsException {
+  const SettingsSaveException({required super.message, this.cause});
+  
+  final Object? cause;
+}
+```
+
+### Error Handling in Methods
+```dart
+Future<void> saveSettings(Settings settings) async {
+  try {
+    await _repository.save(settings);
+  } on StorageException catch (e) {
+    throw SettingsSaveException(
+      message: 'Failed to save settings: ${e.message}',
+      cause: e,
+    );
+  } catch (e) {
+    throw SettingsSaveException(
+      message: 'Unexpected error saving settings',
+      cause: e,
+    );
+  }
+}
+```
+
+## Documentation Standards
+
+### Class Documentation
+```dart
+/// {@template user_profile}
+/// Represents a user's profile information including personal details
+/// and preferences.
+/// 
+/// This class is immutable and provides [copyWith] method for updates.
+/// {@endtemplate}
+final class UserProfile {
+  /// {@macro user_profile}
+  const UserProfile({required this.id, required this.name});
+  
+  /// Unique identifier for the user.
+  final String id;
+  
+  /// Display name of the user.
+  final String name;
+}
+```
+
+### Method Documentation
+```dart
+/// Updates the user's display name.
+/// 
+/// Throws [ValidationException] if [name] is empty or invalid.
+/// Returns a new [UserProfile] instance with the updated name.
+UserProfile updateName(String name) {
+  if (name.trim().isEmpty) {
+    throw ValidationException('Name cannot be empty');
+  }
+  return copyWith(name: name);
+}
+```
+
+## Import Organization
+
+### Import Order
+1. **Dart SDK imports** (e.g., `dart:async`, `dart:io`)
+2. **Flutter framework imports** (e.g., `package:flutter/material.dart`)
+3. **External package imports** (alphabetical)
+4. **Internal package imports** (alphabetical)
+5. **Relative imports** (use sparingly)
+
+### Import Style
+```dart
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:common/common.dart';
+import 'package:settings_api/settings_api.dart';
+
+import '../models/user_profile.dart';
+```
+
+## Widget and UI Patterns
+
+### Widget Class Structure
+```dart
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+  
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  // Private methods for handling user interactions
+  void _onThemeChanged(ThemeMode theme) {
+    final bloc = SettingsScope.blocOf(context);
+    bloc.add(SettingsEvent.updateTheme(theme: theme));
+  }
+  
+  // Private methods for building UI components
+  Widget _buildThemeSelector() {
+    return /* widget implementation */;
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(/* main UI */);
+  }
+}
+```
+
+### Private Widget Pattern
+Use private widgets for complex UI components within a file:
+```dart
+class _ThemeSelector extends StatelessWidget {
+  const _ThemeSelector({required this.onChanged});
+  
+  final ValueChanged<ThemeMode> onChanged;
+  
+  @override
+  Widget build(BuildContext context) {
+    return /* implementation */;
+  }
+}
+```
+
+## Testing Conventions
+
+### Test File Naming
+- **Test files**: `{source_file}_test.dart` (e.g., `settings_bloc_test.dart`)
+- **Test directories**: Mirror source structure in `test/` directory
+
+### Test Class Naming
+```dart
+void main() {
+  group('SettingsBloc', () {
+    group('constructor', () {
+      test('initializes with correct initial state', () {
+        // Test implementation
+      });
+    });
+    
+    group('updateSettings', () {
+      test('emits loading then success states', () async {
+        // Test implementation  
+      });
+    });
+  });
+}
+```
+
+## Performance and Best Practices
+
+### Const Usage
+- Use `const` constructors and widgets whenever possible
+- Mark collections as `const` when they don't change
+- Use `const` for default values in constructors
+
+### Memory Management
+- Dispose of streams, controllers, and listeners in `dispose()`
+- Use weak references for callbacks when appropriate
+- Avoid memory leaks in long-running operations
+
+### Null Safety
+- Use nullable types (`Type?`) only when null is a valid state
+- Prefer non-nullable types with default values
+- Use null-aware operators (`??`, `?.`, `??=`) appropriately
+- Avoid `!` operator except when you're certain value is non-null
