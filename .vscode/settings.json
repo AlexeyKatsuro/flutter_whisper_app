@@ -5,5 +5,26 @@
   "dart.lineLength": 100,
   "dart.flutterSdkPath": ".fvm/versions/3.32.0",
   "cmake.ignoreCMakeListsMissing": true,
-  "makefile.configureOnOpen": false
+  "makefile.configureOnOpen": false,
+  "git.inputValidation": "always",
+  "git.inputValidationLength": 50,
+  "git.inputValidationSubjectLength": 50,
+  "conventionalCommits.scopes": [
+    "app",
+    "core",
+    "feature",
+    "home",
+    "settings",
+    "auth",
+    "ui",
+    "data",
+    "domain",
+    "presentation",
+    "bloc",
+    "repository",
+    "model",
+    "widget",
+    "test",
+    "deps"
+  ]
 }

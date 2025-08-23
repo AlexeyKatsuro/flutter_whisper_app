@@ -33,3 +33,14 @@
 - Place implementation details in src/ directories
 - Export public APIs through single library files
 - Follow the established project structure religiously
+
+## Commit Message Standards
+- Follow Conventional Commits specification (https://www.conventionalcommits.org/en/v1.0.0/)
+- Use format: <type>[optional scope]: <description>
+- Common types: feat, fix, docs, style, refactor, test, chore, build, ci, perf, revert
+- Use imperative mood in subject line (e.g., "add feature" not "added feature")
+- Capitalize first letter of description
+- No period at end of subject line
+- Add BREAKING CHANGE: footer or ! after type for breaking changes
+- Keep subject line under 50 characters when possible
+- Use body to explain what and why, not how
