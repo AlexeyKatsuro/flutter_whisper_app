@@ -1,3 +1,7 @@
+---
+description: Defines core architectural patterns and structural rules for the Sizzle Starter Flutter template including workspace organization, dependency management, application lifecycle, error handling strategies, and testing architecture patterns
+alwaysApply: false
+---
 # Architecture Rules for Sizzle Starter Template
 
 ## Project Structure

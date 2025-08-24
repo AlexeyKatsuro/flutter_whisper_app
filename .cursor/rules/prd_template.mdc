@@ -1,0 +1,85 @@
+# prd_template.mdc
+
+## Rule: Generate Product Requirements Document (PRD) for a mobile feature
+
+### Input
+A task description in natural language, provided by the user.  
+Example:  
+> "Task: Add a microphone button on the main screen that records audio and sends it to the server for transcription."
+
+### Output
+Create a new folder and file:
+```
+
+doc/{short\_feature\_name}/{short\_feature\_name}\_prd.md
+
+```
+Where:
+- `{short_feature_name}` is a short kebab-case identifier of the feature (e.g., `voice_input`, `dark_mode`, `chat_reactions`).
+
+The file should contain a **Product Requirements Document (PRD)** in **English**, following the template below.
+
+---
+
+## PRD Template
+
+### 1. Context & Goals
+- **Goal:** Clear statement of what this feature enables for the user.
+- **Why important:** Business or user value behind the feature.
+- **KPIs / Success Criteria:** How success will be measured (e.g., adoption, performance, NPS).
+
+### 2. Functional Requirements
+- Describe the main flow step by step.
+- List all UI states and transitions.
+- Define error handling and fallback behaviors.
+- Cover both the happy path and edge cases.
+
+### 3. Non-Functional Requirements
+- **Performance:** expected response times, latency, etc.
+- **Reliability:** how data and states are preserved, retry behavior.
+- **Compatibility:** target OS versions, devices, constraints.
+- **Security & Privacy:** handling of sensitive data, encryption, retention.
+- **Accessibility:** compliance with accessibility guidelines.
+- **Localization:** requirements for multiple languages if applicable.
+
+### 4. Acceptance Criteria (use Gherkin format)
+Provide scenarios in **Given–When–Then** style:
+```
+
+Given \[precondition]
+When \[action]
+Then \[expected outcome]
+
+```
+Include at least:
+- Successful flow
+- Error cases (no permission, no network, server error, etc.)
+- Edge cases (empty input, cancellation, interruption)
+
+### 5. Success Metrics
+- Define measurable outcomes (success rates, error rates, latency, adoption).
+- Include target thresholds (e.g., 95% success within 3 seconds).
+
+---
+
+### Rules & Best Practices
+- Keep the PRD written in **clear, simple English**.
+- Use bullet points and structured lists for readability.
+- Always cover both functional and non-functional aspects.
+- Ensure acceptance criteria are **testable**.
+- Focus on mobile application context (UI states, offline behavior, OS restrictions).
+
+---
+
+### Example Output Location
+If the user request is:
+> "Task: Implement voice input on the main screen"
+
+The generated file should be:
+```
+
+doc/voice-input/voice-input\_prd.md
+
+```
+
+And contain the PRD filled out using the template above.

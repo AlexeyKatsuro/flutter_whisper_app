@@ -1,0 +1,98 @@
+---
+alwaysApply: false
+---
+# UX & UI Template (ux_ui_template.mdc)
+
+### Input
+A product requirements document link, provided by the user.  
+
+### Output
+Create a new folder (if not exist) and file:
+```
+
+doc/{short\_feature\_name}/{short\_feature\_name}\_ui_ux.md
+
+```
+Where:
+- `{short_feature_name}` is a short kebab-case identifier of the feature (e.g., `voice_input`, `dark_mode`, `chat_reactions`).
+
+This template defines the structure for writing **User Experience** and **UI Design** requirements for mobile features.  
+
+---
+
+## 1. UX Flow (User Experience)
+
+Describe the **step-by-step flow of the feature** including all edge cases and error scenarios.  
+Each step must be **unambiguous** – no multiple variants or "or" options.  
+The goal is to describe the **intended interaction and transitions** between states.
+
+Structure:  
+- **Screen Name / State**  
+  - Describe what the user sees when entering this state.  
+  - Describe available interactions (tap, swipe, long press, etc.).  
+  - Describe transitions: what happens when the user performs each action.  
+- **Edge Cases & Error Handling**:  
+  - Loading states (data loading, sending requests, processing).  
+  - Error states (network errors, validation errors, server errors).  
+  - Empty states (no data, no network connection).  
+  - Success/failure feedback for user actions.  
+- Keep descriptions **generalized enough** so the flow applies across features, but **precise in behavior**.  
+- Avoid describing visual appearance since that comes from the design system.
+
+---
+
+## 2. UI Design (Visual Layout)
+
+Translates the UX Flow into **pixel-perfect requirements** using **Material Design 3** tokens only.  
+**No hardcoding** – everything through system styles and tokens.
+
+Structure for each screen/state:  
+- **Layout & Positioning**: Element positioning, alignment, hierarchy and spacing (Material spacing scale, explicit dp/sp values).  
+- **Components**: Only MD3 components and tokens. Custom components follow MD3 guidelines.  
+- **Note**: Don't describe standard MD3 component behavior already covered in design system.
+
+---
+
+## 3. JSON Copy Table
+
+At the end of the document, provide a table listing **all texts** used in the design.  
+All texts must be extracted into separate **ARB files**.  
+
+**Key naming rules:**
+- Domain area prefix (e.g., `registration`, `chat`, `player`).  
+- Component/context (`label`, `button`, `hint`, `title`, `description`, etc.).  
+- Semantic purpose.  
+- Keys must reflect **where the text is used**, not the text content itself.  
+
+**Format: {domainPrefix}_{component}_{type}**
+
+**JSON must be generated for both EN and RU languages.**
+
+Example:
+```json
+{
+  "@@locale": "en",
+  "chat_input_placeholder": "Type your message...",
+  "@chat_input_placeholder": {
+    "description": "Placeholder text for chat input field"
+  },
+  "auth_continue_button": "Continue",
+  "@auth_continue_button": {
+    "description": "Continue button on authentication screen"
+  },
+  "profile_section_header_title": "Profile Information",
+  "@profile_section_header_title": {
+    "description": "Header title for profile section"
+  }
+}
+```
+
+
+---
+
+## 4. Rules & Constraints
+1. **No ambiguity** – flows and UI must be finalized decisions including all edge cases.  
+2. **Material Design 3 only** – all measurements, colors, and text styles from MD3 system.  
+3. **No duplication** – don't describe standard MD3 component behavior.  
+4. **Structured text keys** – reflect location + purpose, not content.  
+5. **JSON Copy required** – always provide at the end for both EN and RU.  
