@@ -7,29 +7,40 @@
 - Network connectivity is indicated by microphone icon appearance:
   - Online: Standard microphone icon
   - Offline: Microphone icon with small crossed-out cloud overlay at bottom
+  - Permission Denied: Microphone icon with small block icon (circle with slash) at bottom center (has priority over offline)
 - Available interactions:
-  - Tap microphone button: Initiates voice input flow
+  - Tap microphone button: Initiates one of the following flows:
+    - Permission Check State (if permission not yet requested)
+    - Permission Denied State (if permission was denied)
+    - Recording State (if permission is granted)
   - Long press microphone button: Shows tooltip "Voice input"
   - Tap text field: Opens keyboard for manual text input
 - Transitions:
-  - Microphone button tap → Permission Check State (if permissions not granted) or Recording State (if permissions available)
+  - Microphone button tap → Permission Check State / Permission Denied State / Recording State
   - Text field tap → Standard text input mode
 
 ### Permission Check State
-- System permission dialog appears requesting microphone access
-- Dialog shows clear explanation of why voice input needs microphone permission
+- Dialog shows system permission dialog with text: {voice_permission_rationale}
 - Available interactions:
   - Tap "Allow": Grants permission and transitions to Recording State
-  - Tap "Deny": Returns to Idle State with disabled microphone button
+  - Tap "Deny": Returns to Permission Denied State
 - Transitions:
   - Permission granted → Recording State
-  - Permission denied → Idle State with permission explanation message
+  - Permission denied → Permission Denied State
+
+### Permission Denied State
+- SnackBar appears with message about denied permission and action button "Settings" (opens app settings for permissions)
+- Microphone icon displays small block icon (circle with slash) at bottom center (badge position). If offline and denied, only block icon is shown.
+- Available interactions:
+  - Tap microphone button: Shows SnackBar again
+  - Tap "Settings" in SnackBar: Opens app settings
+- Transitions:
+  - Permission granted in settings → Idle State (microphone icon returns to normal)
 
 ### Recording State
-- Microphone icon transforms to close/cancel icon (X)
-- Visual recording indicator appears (animated sound waves around the icon)
-- Recording timer displays current duration in MM:SS format
-- Check icon (✓) appears as finish button
+- Microphone icon transforms to close/cancel icon (X) and check icon (✓), both in trailing position of the TextField, side by side with minimal spacing.
+- Visual recording indicator appears (animated sound waves around the icons).
+- Recording timer displays current duration in MM:SS format, centered between icons.
 - Available interactions:
   - Tap check icon (✓): Stops recording and transitions to Processing State
   - Long press check icon: Shows tooltip "Finish recording"
@@ -42,10 +53,9 @@
   - 60-second limit reached → Auto-transition to Processing State
 
 ### Processing State
-- Check icon (✓) and close icon (X) remain visible but disabled
-- Small loading spinner appears between the two icons
-- Recording timer remains visible showing final duration
-- No user interactions available during processing
+- Check icon (✓) and close icon (X) disappear, replaced by a CircularProgressIndicator (24dp) in the trailing position where check icon was.
+- Timer remains visible.
+- No user interactions available during processing.
 - Transitions:
   - Successful transcription → Success State
   - Audio file error (save/read failure) → Error State
@@ -53,75 +63,53 @@
   - Other failures → Idle State (silent reset)
 
 ### Error State
-- Error message appears below the recording area
-- Check icon (✓) and close icon (X) remain visible and enabled
+- Error message is shown as a SnackBar with appropriate text (audio file error, API error, etc.).
+- In trailing position, both close icon (X) and retry icon (refresh/replay) are shown side by side.
 - Available interactions:
-  - Tap check icon (✓): Retry transcription with same audio
-  - Long press check icon: Shows tooltip "Retry"
+  - Tap retry icon: Retry transcription with same audio
+  - Long press retry icon: Shows tooltip "Retry"
   - Tap close icon (X): Dismiss error and return to Idle State
   - Long press close icon: Shows tooltip "Cancel"
 - Transitions:
-  - Check icon tap → Processing State (retry)
+  - Retry icon tap → Processing State (retry)
   - Close icon tap → Idle State
 
 ### Success State
-- Transcribed text appears in the text input field
-- Text cursor positioned at end of transcribed content
-- Icons disappear and microphone button returns to normal idle state
+- Transcribed text appears in the text input field.
+- If the user had a cursor in the text field before recording, the recognized text is inserted at the cursor position, not just appended to the end.
+- Loading indicator disappear and microphone button returns to normal idle state.
 - Available interactions:
   - Edit transcribed text: Standard text editing
-  - Tap microphone again: Add more voice input (appends to existing text)
+  - Tap microphone again: Add more voice input (inserts at current cursor position)
 - Transitions:
-  - Microphone tap → Recording State (appends to existing text)
+  - Microphone tap → Recording State (inserts at cursor)
   - Text editing → Standard text input mode
 
-### Edge Cases & Error Handling
-
-#### Error States
-- No microphone permission: Clear explanation with settings link, returns to Idle State
-- No network connection: Shows crossed-out cloud overlay, continues with offline processing
-- Audio file save/read error: Error message with retry option using same audio
-- API/transcription service error: Error message with retry option
-- Audio too short/silent: Automatic reset to Idle State
-- Recording interrupted: Returns to Idle State
-
-#### Empty States
-- No audio captured: Automatic reset to Idle State
-- Silent recording: Automatic reset to Idle State
-- No transcription result: Automatic reset to Idle State
-
-#### Success/Failure Feedback
-- Successful recording: Subtle haptic feedback and sound wave animation
-- Successful transcription: Text appears with brief highlight animation, return to Idle State
-- Audio/API errors: Error message with retry option using check icon
-- Other errors: Silent reset to Idle State, user can try again normally
-- Network status: Visual indication through crossed-out cloud overlay when offline
 
 ## 2. UI Design (Visual Layout)
 
 ### Main Screen / Idle State
 
 #### Layout & Positioning
-- Text input field: Material 3 `TextField` component with standard 56dp height
-- Microphone button: 24dp icon positioned in `TextField` trailing slot with 12dp padding
-- Offline indicator overlay: 8dp crossed-out cloud icon positioned at bottom-right of microphone icon with 2dp offset
-- Spacing follows Material spacing scale: 8dp, 12dp, 16dp, 24dp
+- Text input field: Fixed to the bottom of the screen, full width, with 16dp horizontal padding, always above the keyboard.
+- Microphone button: 24dp icon in trailing position of TextField.
+- Offline overlay: `cloud_off` icon (8dp) using `outline` color token, positioned as a badge at the center-bottom of the microphone icon with 2dp offset down.
+- Permission denied overlay: `block` icon (8dp) using `error` color token, positioned as a badge at the center-bottom of the microphone icon with 2dp offset down. If both offline and denied, only block icon is shown.
 
 #### Components
 - **Text Field**: `OutlinedTextField` with `bodyLarge` text style
 - **Microphone Button**: `IconButton` with `mic` icon, `onSurfaceVariant` color when inactive
-- **Offline Overlay**: `cloud_off` icon (8dp) using `outline` color token, positioned with stack overlay
+- **Offline Overlay**: `cloud_off` icon (8dp) as badge at center-bottom of mic icon
+- **Permission Denied Overlay**: `block` icon (8dp) as badge at center-bottom of mic icon
 - **Text**: Input hint uses `onSurfaceVariant` color and `bodyMedium` text style
 
 ### Recording State
 
 #### Layout & Positioning
 - Recording area: Replaces text field area during recording
-- Close icon (X): Positioned left side with 24dp size
+- Close icon (X) and check icon (✓): Both in trailing position, side by side, 24dp size, minimal spacing
 - Timer display: Centered horizontally between icons
-- Check icon (✓): Positioned right side with 24dp size
 - Sound waves: Animated around the entire recording area
-- Icons spacing: 16dp padding from container edges, 24dp minimum spacing between icons
 
 #### Components
 - **Close Icon**: `IconButton` with `close` icon using `error` color token
@@ -134,61 +122,23 @@
 ### Processing State
 
 #### Layout & Positioning
-- Same layout as Recording State but with icons disabled
-- Loading spinner: 16dp size centered between the two icons
-- Timer: Remains visible showing final recording duration
-- Icons: Grayed out but still visible
+- Same layout as Recording State, but instead of icons, CircularProgressIndicator (24dp) is shown in trailing position where check icon was.
+- Timer remains visible showing final recording duration.
 
 #### Components
-- **Close Icon**: Disabled state with `onSurface` color at 0.38 opacity
-- **Check Icon**: Disabled state with `onSurface` color at 0.38 opacity
-- **Loading Spinner**: `CircularProgressIndicator` (16dp) using `primary` color
-- **Timer**: Same styling as Recording State
-- **Background**: Same container as Recording State
-
-### Success State
-
-#### Layout & Positioning
-- Returns to standard text field layout
-- Text field: Populated with transcribed content
-- Microphone button: Returns to idle state appearance
-- Brief highlight animation on transcribed text
-
-#### Components
-- **Text Field**: `OutlinedTextField` with transcribed content using `bodyLarge` style
-- **Microphone Button**: Standard `mic` icon with `onSurfaceVariant` color
-- **Text Highlight**: Brief animation using `primary` color with 0.2 opacity overlay
-- **Text Selection**: Standard Material 3 text selection handles and cursor
-
-### Permission Check State
-
-#### Layout & Positioning
-- System dialog: Platform-standard permission dialog
-- Explanation text: Positioned in dialog or below main UI with 12dp spacing
-- Helper icon: 24dp microphone icon with explanation
-
-#### Components
-- **Permission Dialog**: System-provided component (platform-specific styling)
-- **Explanation Card**: `Card` with `surfaceVariant` background and 12dp padding
-- **Helper Text**: `bodyMedium` text style with `onSurfaceVariant` color
-- **Icon**: `mic` icon using `primary` color token
+- **Loading Spinner**: `CircularProgressIndicator` (24dp) using `primary` color
 
 ### Error State
 
 #### Layout & Positioning
-- Same layout as Processing State with icons enabled
-- Error message: Positioned below the recording area with 8dp spacing
-- Error container: Full width with 12dp horizontal padding
-- Icons remain in same positions as Processing State
+- Same as Processing State, but in trailing position both close icon (X) and retry icon (refresh/replay) are shown side by side.
+- Error message is shown as a SnackBar at the bottom of the screen.
 
 #### Components
 - **Close Icon**: Enabled `IconButton` with `close` icon using `error` color token
-- **Check Icon**: Enabled `IconButton` with `check` icon using `primary` color token
-- **Error Container**: `Card` component with `errorContainer` surface color and 8dp corner radius
-- **Error Text**: `bodyMedium` text style with `onErrorContainer` color
+- **Retry Icon**: Enabled `IconButton` with `refresh` or `replay` icon using `primary` color token
+- **SnackBar**: Material 3 SnackBar with error message and optional action
 - **Timer**: Same styling as Processing State showing final duration
-
-
 
 ## 3. JSON Copy Table
 
@@ -267,6 +217,14 @@
   "voice_permission_settings_button": "Open Settings",
   "@voice_permission_settings_button": {
     "description": "Button to open app settings for permission management"
+  },
+  "voice_error_retry_icon": "refresh",
+  "@voice_error_retry_icon": {
+    "description": "Icon for retry button in error state"
+  },
+  "voice_permission_rationale": "Voice input requires access to your microphone to record and transcribe your speech.",
+  "@voice_permission_rationale": {
+    "description": "Rationale text shown in system permission dialog for microphone access"
   }
 }
 ```
@@ -346,6 +304,14 @@
   "voice_permission_settings_button": "Открыть настройки",
   "@voice_permission_settings_button": {
     "description": "Кнопка открытия настроек приложения для управления разрешениями"
+  },
+  "voice_error_retry_icon": "refresh",
+  "@voice_error_retry_icon": {
+    "description": "Иконка для кнопки повтора в состоянии ошибки"
+  },
+  "voice_permission_rationale": "Голосовой ввод требует доступа к вашему микрофону для записи и распознавания речи.",
+  "@voice_permission_rationale": {
+    "description": "Текст обоснования для системного диалога запроса доступа к микрофону"
   }
 }
 ```
