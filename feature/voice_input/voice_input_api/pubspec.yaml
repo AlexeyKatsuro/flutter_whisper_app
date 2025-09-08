@@ -1,0 +1,36 @@
+name: voice_input_api
+description: "Voice input domain module"
+version: 0.0.1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+  flutter: ">=3.32.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  bloc: ^9.0.0
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+  permission_handler: ^11.3.1
+  record: ^5.1.2
+  speech_to_text: ^7.0.0
+  connectivity_plus: ^6.0.5
+  common:
+    path: ../../../core/common
+  logger:
+    path: ../../../core/logger
+  error_reporter:
+    path: ../../../core/error_reporter
+  rest_client:
+    path: ../../../core/rest_client
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+  build_runner: ^2.5.3
+  mockito: ^5.4.4

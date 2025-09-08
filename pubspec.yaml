@@ -21,3 +21,4 @@ workspace:
   # Feature
   - feature/settings/settings_api
   - feature/home
+  - feature/voice_input/voice_input_api
