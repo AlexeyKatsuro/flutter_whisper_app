@@ -1,0 +1,274 @@
+# tech_spec_template.mdc
+
+## Rule: Generate Technical Specification for a mobile feature
+
+### Input
+A Product Requirements Document (PRD) and UI/UX specification, provided by the user.  
+Example:  
+> "Составь ТЗ для новой фичи Voice Input по шаблону tech_spec_template.mdc по PRD и UI/UX описанию @voice_input_prd.md и @voice_input_ui_ux.md"
+
+### Output
+Create a new file in the same feature folder:
+```
+
+doc/{short_feature_name}/{short_feature_name}_tech_spec.md
+
+```
+Where:
+- `{short_feature_name}` matches the existing PRD and UI/UX files.
+
+The file should contain a **Technical Specification** in **English**, following the template below.
+
+---
+
+## Technical Specification Template
+
+### 1. Architecture Overview
+
+#### Feature Module Structure
+- **Package Name**: `feature/{feature_name}/{feature_name}_api`
+- **Module Dependencies**: List all core and external dependencies
+- **Public API**: Define what the feature exposes to other modules
+- **Integration Points**: How this feature connects with existing systems
+
+#### Clean Architecture Layers
+- **Domain Layer**: Entities, use cases, repository contracts
+- **Data Layer**: Data sources, repository implementations, DTOs
+- **Application Layer**: BLoC/Cubit state management
+- **Presentation Layer**: Widgets, screens, UI components
+
+### 2. Technical Implementation
+
+#### Domain Models
+List all domain entities, value objects, and enums with their properties:
+```dart
+// Example structure - replace with actual models
+class FeatureEntity {
+  // Properties and methods
+}
+
+enum FeatureState {
+  // States
+}
+```
+
+#### Repository Contracts
+Define abstract repository interfaces with all required methods:
+```dart
+// Example structure
+abstract interface class FeatureRepository {
+  // Method signatures
+}
+```
+
+#### Use Cases/Business Logic
+List all use cases with inputs, outputs, and error scenarios:
+- Use case name: Purpose, inputs, outputs, exceptions
+- Include validation rules and business constraints
+
+#### State Management (BLoC Pattern)
+- **Events**: All user actions and system events (Freezed sealed classes)
+- **States**: All possible UI states (Freezed sealed classes) 
+- **State Transitions**: Event → State mapping with business logic
+- **Error Handling**: How errors propagate through BLoC layers
+
+### 3. Data Layer Implementation
+
+#### Data Sources
+- **Local Data Sources**: SharedPreferences, SQLite, file storage
+- **Remote Data Sources**: API endpoints, WebSocket connections
+- **Platform Services**: Native platform integrations (permissions, device features)
+
+#### Data Transfer Objects (DTOs)
+List all DTOs for API communication and local storage:
+```dart
+// Example structure
+@freezed
+class FeatureDto with _$FeatureDto {
+  // DTO properties and JSON serialization
+}
+```
+
+#### Repository Implementation
+- **Caching Strategy**: How data is cached and invalidated
+- **Offline Support**: Fallback mechanisms and data synchronization
+- **Error Mapping**: Converting data layer errors to domain exceptions
+
+### 4. Platform Integration
+
+#### Permissions
+- **Required Permissions**: List all Android/iOS permissions
+- **Permission Flow**: When and how permissions are requested
+- **Permission Handling**: Graceful degradation when denied
+
+#### Native Platform Features
+- **iOS Implementation**: Platform-specific requirements and limitations
+- **Android Implementation**: Platform-specific requirements and limitations
+- **Platform Channels**: Custom platform channel definitions if needed
+
+#### Third-party Services
+- **External APIs**: Service integration details and authentication
+- **SDK Integration**: Third-party SDK configuration and usage
+- **Fallback Mechanisms**: Offline or service unavailable scenarios
+
+### 5. Dependency Injection
+
+#### Feature Container
+Define the feature-specific dependency container:
+```dart
+// Example structure
+class FeatureContainer {
+  const FeatureContainer({
+    required this.repository,
+    required this.bloc,
+    // other dependencies
+  });
+  
+  static Future<FeatureContainer> create(Dependencies deps) async {
+    // Container creation logic
+  }
+}
+```
+
+#### Dependency Graph
+- **Internal Dependencies**: How components depend on each other
+- **External Dependencies**: Core modules and services required
+- **Initialization Order**: Sequence of dependency creation
+- **Cleanup**: Resource disposal and cleanup logic
+
+### 6. UI Implementation Details
+
+#### Widget Architecture
+- **Screen Widgets**: Describe roles (no code or widget classes)
+- **Component Widgets**: Describe responsibilities (no code)
+- **State Connection**: Describe scope-based access pattern (no code)
+- **Navigation**: Describe flows and entry points (no code)
+
+#### Material Design 3 Implementation
+- **Theme Integration**: How feature uses MD3 design tokens
+- **Custom Components**: Any custom widgets following MD3 guidelines
+- **Responsive Design**: Handling different screen sizes and orientations
+- **Accessibility**: Screen reader support and keyboard navigation
+
+#### Animation and Transitions
+- **State Animations**: Loading, success, error state transitions
+- **Micro-interactions**: Button feedback, gesture responses
+- **Page Transitions**: Navigation animations between screens
+
+### 7. Testing Strategy
+
+#### Unit Tests
+- **Domain Logic**: Test use cases and business rules
+- **Repository Tests**: Mock data sources and test error scenarios  
+- **BLoC Tests**: Test all state transitions and event handling
+- **Widget Tests**: Test UI components and user interactions
+
+#### Integration Tests
+- **Feature Flow**: End-to-end user scenarios
+- **Platform Integration**: Test native platform features
+- **API Integration**: Test with mock and real backend services
+
+#### Test Infrastructure
+- **Mock Dependencies**: Test implementations of containers
+- **Test Utilities**: Helper functions and test data builders
+- **CI/CD Integration**: Automated testing pipeline requirements
+
+### 8. Performance Considerations
+
+#### Memory Management
+- **Resource Cleanup**: Proper disposal of streams, controllers, files
+- **Memory Optimization**: Large object handling and caching strategies
+- **Memory Monitoring**: Potential memory leak prevention
+
+#### Performance Optimization
+- **Loading Performance**: Async operation optimization
+- **UI Performance**: Widget rebuild optimization and caching
+- **Network Performance**: Request batching and caching strategies
+- **Battery Optimization**: Background processing and power consumption
+
+### 9. Error Handling & Monitoring
+
+#### Exception Hierarchy
+Define custom exceptions for the feature:
+```dart
+// Example structure
+abstract class FeatureException implements Exception {
+  const FeatureException(this.message);
+  final String message;
+}
+
+class FeatureNetworkException extends FeatureException {
+  // Specific exception implementation
+}
+```
+
+#### Error Recovery
+- **Retry Mechanisms**: Automatic and manual retry strategies
+- **Fallback Behavior**: What happens when operations fail
+- **User Communication**: Error messages and recovery guidance
+
+#### Logging and Analytics
+- **Event Tracking**: Key user actions and feature usage
+- **Error Logging**: Error context and debugging information
+- **Performance Metrics**: Response times and success rates
+
+### 10. Development Tasks Breakdown
+
+#### Implementation Phases
+Break down the implementation into logical phases:
+
+**Phase 1: Foundation**
+- Domain models and repository contracts
+- Basic dependency injection setup
+- Core use cases implementation
+
+**Phase 2: Data Layer**
+- Repository implementation with data sources
+- DTO definitions and serialization
+- Error handling and caching
+
+**Phase 3: Business Logic**
+- BLoC implementation with all states and events
+- Use case integration and validation
+- Error propagation and recovery
+
+**Phase 4: UI Implementation**
+- Screen widgets and navigation
+- Component widgets and animations
+- Accessibility and responsive design
+
+**Phase 5: Platform Integration**
+- Native platform features and permissions
+- Third-party service integration
+- Testing and optimization
+
+#### Task Dependencies
+- **Prerequisite Tasks**: What must be completed before starting
+- **Parallel Tasks**: What can be developed simultaneously
+- **Blocking Dependencies**: External dependencies or decisions needed
+
+---
+
+### Rules & Best Practices
+1. **Follow Sizzle Starter Architecture**: Strictly adhere to Clean Architecture and established patterns
+2. **Freezed for Data Classes**: Use Freezed for all immutable data structures
+3. **BLoC State Management**: Sequential event processing with proper error handling
+4. **100-Character Line Length**: Follow project coding standards
+5. **Dependency Injection**: Use composition root pattern and proper scoping
+6. **Material Design 3**: Only use MD3 tokens and components
+7. **Testing Strategy**: Provide comprehensive test coverage plan
+8. **Documentation**: Include code examples for key architectural decisions
+9. **Performance Focus**: Consider mobile performance implications in all decisions
+10. **Error Recovery**: Plan for graceful degradation and user experience continuity
+
+---
+
+### Example Output Location
+If the user requests tech spec for voice input feature:
+```
+
+doc/voice_input/voice_input_tech_spec.md
+
+```
+
+The file should contain the technical specification following this template, with all sections filled out based on the PRD and UI/UX requirements.
